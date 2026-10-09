@@ -1,0 +1,187 @@
+{
+  "name": "Weather Agent - Daily",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b268c048-8097-409c-b029-96bc91cac0a4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "13.027723"
+            },
+            {
+              "name": "longitude",
+              "value": "77.635847"
+            },
+            {
+              "name": "current",
+              "value": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m"
+            },
+            {
+              "name": "daily",
+              "value": "temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,weather_code"
+            },
+            {
+              "name": "timezone",
+              "value": "Asia/Kolkata"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1a303090-174d-436d-8230-9a0091264c1f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent weather assistant.\n\nAnalyze ONLY the weather data provided below.\n\nIMPORTANT RULES:\n- Never invent weather information.\n- Never assume a weather condition that is not supported by the data.\n- Never invent wind direction, rainfall timing, or hourly rainfall.\n- If a piece of information is unavailable, do not mention it.\n- Use the numeric values provided by the weather API as the source of truth.\n- Do not mention raw weather codes.\n\nCreate a concise daily weather report containing:\n\n1. Today's weather summary\n2. Current temperature\n3. Feels-like temperature\n4. Humidity\n5. Current precipitation/rain\n6. Wind speed\n7. General weather condition, only when supported by the data\n8. Practical advice based only on the available data\n\nFor outdoor-activity advice:\n- Consider temperature.\n- Consider precipitation/rain.\n- Consider the available rain probability forecast.\n- Consider wind speed.\n- Clearly distinguish between current conditions and today's forecast.\n\nDo not provide medical advice or make health-related recommendations.\n\nFORMAT THE RESPONSE EXACTLY LIKE THIS:\n\nToday's Weather Report\n\nTemperature: <value> °C\nFeels Like: <value> °C\nHumidity: <value> %\nPrecipitation: <value> mm\nWind Speed: <value> km/h\n\nForecast:\n<forecast information>\n\nPractical Advice:\n<advice>\n\nUse a new line for every item.\nLeave a blank line between sections.\nDo not return JSON.\nDo not use one continuous paragraph.\n\nWeather data:\n{{ JSON.stringify($('HTTP Request').item.json) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a36fe2fe-5fa6-45aa-945b-ffa129029f3e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        288,
+        208
+      ],
+      "id": "e17142f5-bbc7-43b0-840e-410c81e3f5b8",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "Qwlb8GUPSQPzECfI",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "kummithiaryan@gmail.com",
+        "toEmail": "kummithiaryan@gmail.com",
+        "subject": "🌤️ Today's Weather Report",
+        "emailFormat": "text",
+        "text": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        768,
+        0
+      ],
+      "id": "d109cd60-5ea5-4af0-b3f4-87b953443b82",
+      "name": "Send an Email",
+      "webhookId": "2a5e1166-fb6d-4a1d-a2c0-d283d286f9bc",
+      "credentials": {
+        "smtp": {
+          "id": "wAzOBLhYDwgCFvew",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "df3a02c2-27b5-4c9e-bb98-4fad6de1d637",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a41ea8176c90f17d25a388b6e971aa02e4726f76ba363ae0f6a3d0dab64f7ba1"
+  },
+  "nodeGroups": [],
+  "id": "fhOoblNnanPW85g4",
+  "tags": []
+}
