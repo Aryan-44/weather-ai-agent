@@ -34,3 +34,7 @@ Configure credentials securely in n8n. Never publish API keys, passwords, or per
 
 ## Author
 GitHub: https://github.com/Aryan-44
+
+## Workflow Screenshot
+
+![Weather AI Agent Workflow](weather-agent-workflow.png)
